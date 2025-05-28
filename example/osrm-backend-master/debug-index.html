@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>OSRM Demo - Debug Version</title>
+    <meta name="viewport" content="initial-scale=1.0 maximum-scale=1.0" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link rel="stylesheet" href="css/leaflet.css" />
+    <link rel="stylesheet" href="css/fonts.css" />
+    <link href="css/site.css" rel="stylesheet" />
+    <style>
+      .error-info {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(255, 0, 0, 0.8);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 10000;
+        max-width: 300px;
+        font-size: 12px;
+      }
+      .debug-info {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 10000;
+        max-width: 300px;
+        font-size: 12px;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map" class="map"></div>
+    <div id="error-info" class="error-info" style="display: none"></div>
+    <div id="debug-info" class="debug-info"></div>
+
+    <script>
+      // Error handling
+      window.onerror = function (msg, url, line, col, error) {
+        const errorDiv = document.getElementById("error-info");
+        errorDiv.style.display = "block";
+        errorDiv.innerHTML = "Error: " + msg + "<br>Line: " + line;
+        console.error("Global error:", msg, url, line, col, error);
+      };
+
+      // Debug info
+      function addDebug(msg) {
+        const debugDiv = document.getElementById("debug-info");
+        debugDiv.innerHTML +=
+          new Date().toLocaleTimeString() + ": " + msg + "<br>";
+        console.log("DEBUG:", msg);
+      }
+
+      addDebug("Page loaded");
+      addDebug("Loading bundle.js...");
+    </script>
+    <script src="bundle.js"></script>
+    <script>
+      addDebug("Bundle loaded");
+
+      // Check if everything loaded correctly
+      setTimeout(function () {
+        if (typeof L !== "undefined") {
+          addDebug("✓ Leaflet available: " + L.version);
+        } else {
+          addDebug("✗ ERROR: Leaflet not available");
+        }
+
+        const mapDiv = document.getElementById("map");
+        if (mapDiv && mapDiv.children.length > 0) {
+          addDebug("✓ Map initialized successfully");
+        } else {
+          addDebug("⚠ WARNING: Map may not be initialized");
+        }
+
+        // Test OSRM server
+        fetch(
+          "http://localhost:5003/route/v1/driving/7.416,43.731;7.421,43.736"
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            addDebug("✓ OSRM server: " + data.code);
+          })
+          .catch((error) => {
+            addDebug("✗ OSRM error: " + error.message);
+          });
+      }, 2000);
+    </script>
+  </body>
+</html>

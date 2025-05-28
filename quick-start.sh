@@ -15,7 +15,7 @@ fi
 
 # Run the main setup script with Berlin (small dataset for quick testing)
 echo "📥 Setting up OSRM with Berlin data..."
-./setup.sh berlin car
+./setup.sh -r berlin -p car
 
 echo ""
 echo "✅ Quick start completed!"

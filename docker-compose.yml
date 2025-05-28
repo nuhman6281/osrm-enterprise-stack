@@ -1,135 +1,156 @@
 version: "3.8"
 
 services:
-  # Primary OSRM Backend Instance
+  # OSRM Backend Services (Load Balanced)
   osrm-backend-1:
-    image: ghcr.io/project-osrm/osrm-backend:latest
+    image: ghcr.io/project-osrm/osrm-backend:v6.0.0
     container_name: osrm-backend-1
     volumes:
-      - ./data:/data
-      - ./profiles:/profiles
-    command: osrm-routed --algorithm mld --max-viaroute-size 10000 --max-trip-size 100 --max-table-size 1000 /data/berlin-latest
+      - ./data:/data:ro
+    command: osrm-routed --algorithm mld /data/map.osrm
+    ports:
+      - "5001:5000"
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 8G
-        reservations:
-          memory: 4G
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "http://localhost:5000/route/v1/driving/13.388860,52.517037;13.397634,52.529407",
-        ]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
     networks:
       - osrm-network
 
-  # Secondary OSRM Backend Instance for Load Balancing
   osrm-backend-2:
-    image: ghcr.io/project-osrm/osrm-backend:latest
+    image: ghcr.io/project-osrm/osrm-backend:v6.0.0
     container_name: osrm-backend-2
     volumes:
-      - ./data:/data
-      - ./profiles:/profiles
-    command: osrm-routed --algorithm mld --max-viaroute-size 10000 --max-trip-size 100 --max-table-size 1000 /data/berlin-latest
+      - ./data:/data:ro
+    command: osrm-routed --algorithm mld /data/map.osrm
+    ports:
+      - "5002:5000"
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 8G
-        reservations:
-          memory: 4G
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "http://localhost:5000/route/v1/driving/13.388860,52.517037;13.397634,52.529407",
-        ]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
     networks:
       - osrm-network
 
-  # OSRM Frontend
-  osrm-frontend:
-    image: osrm/osrm-frontend:latest
-    container_name: osrm-frontend
-    ports:
-      - "9966:9966"
+  # Enhanced API Service
+  osrm-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: osrm-enterprise-api
     environment:
-      - OSRM_BACKEND=http://nginx-lb:80
-      - OSRM_CENTER=52.520008,13.404954
-      - OSRM_ZOOM=13
-      - OSRM_LANGUAGE=en
-      - OSRM_LABEL=Car (fastest)
+      - NODE_ENV=production
+      - PORT=3000
+      - OSRM_BACKEND_URL=http://nginx-lb:80
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=info
+    ports:
+      - "3003:3000"
     depends_on:
-      - nginx-lb
-    restart: unless-stopped
-    networks:
-      - osrm-network
-
-  # Load Balancer
-  nginx-lb:
-    image: nginx:alpine
-    container_name: osrm-load-balancer
-    volumes:
-      - ./nginx/nginx-lb.conf:/etc/nginx/nginx.conf
-    depends_on:
+      - redis
       - osrm-backend-1
       - osrm-backend-2
     restart: unless-stopped
-    networks:
-      - osrm-network
-
-  # Main Nginx Proxy with SSL
-  nginx-proxy:
-    image: nginx:alpine
-    container_name: osrm-proxy
-    ports:
-      - "80:80"
-      - "443:443"
-      - "5001:5000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/nginx/ssl
-      - ./nginx/logs:/var/log/nginx
-    depends_on:
-      - nginx-lb
-      - osrm-frontend
-    restart: unless-stopped
+      - ./api/logs:/app/logs
     networks:
       - osrm-network
 
-  # Redis for Caching
+  # Redis Cache
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
     container_name: osrm-redis
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - osrm-network
 
-  # Prometheus for Monitoring
+  # Load Balancer for OSRM Backends
+  nginx-lb:
+    image: nginx:alpine
+    container_name: osrm-load-balancer
+    volumes:
+      - ./nginx/load-balancer.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - osrm-backend-1
+      - osrm-backend-2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - osrm-network
+
+  # Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: osrm-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./demo:/usr/share/nginx/html:ro
+    depends_on:
+      - osrm-api
+      - nginx-lb
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - osrm-network
+
+  # Frontend Demo
+  frontend:
+    build:
+      context: ./demo
+      dockerfile: Dockerfile
+    container_name: osrm-frontend
+    ports:
+      - "9966:80"
+    volumes:
+      - ./demo:/usr/share/nginx/html:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - osrm-network
+
+  # Monitoring Stack
   prometheus:
     image: prom/prometheus:latest
     container_name: osrm-prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -142,24 +163,25 @@ services:
     networks:
       - osrm-network
 
-  # Grafana for Visualization
   grafana:
     image: grafana/grafana:latest
     container_name: osrm-grafana
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
     restart: unless-stopped
     networks:
       - osrm-network
 
-  # Node Exporter for System Metrics
+  # Exporters for monitoring
   node-exporter:
     image: prom/node-exporter:latest
     container_name: osrm-node-exporter
@@ -178,31 +200,43 @@ services:
     networks:
       - osrm-network
 
-  # Custom API Service
-  osrm-api:
-    build: ./api
-    container_name: osrm-api
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: osrm-redis-exporter
     ports:
-      - "3001:3001"
+      - "9121:9121"
     environment:
-      - OSRM_BACKEND_URL=http://nginx-lb:80
-      - REDIS_URL=redis://redis:6379
-      - NODE_ENV=production
+      - REDIS_ADDR=redis://redis:6379
     depends_on:
-      - nginx-lb
       - redis
     restart: unless-stopped
-    volumes:
-      - ./api:/app
-      - /app/node_modules
+    networks:
+      - osrm-network
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    container_name: osrm-nginx-exporter
+    ports:
+      - "9113:9113"
+    command:
+      - "-nginx.scrape-uri=http://nginx/nginx_status"
+    depends_on:
+      - nginx
+    restart: unless-stopped
     networks:
       - osrm-network
 
 volumes:
   redis-data:
+    driver: local
   prometheus-data:
+    driver: local
   grafana-data:
+    driver: local
 
 networks:
   osrm-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

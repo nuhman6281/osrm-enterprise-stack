@@ -1,0 +1,7 @@
+FROM osrm/osrm-frontend
+
+# Copy our custom leaflet options that use OpenStreetMap instead of Mapbox
+COPY custom_leaflet_options.js /src/src/leaflet_options.js
+
+# Rebuild the frontend with the new configuration
+RUN cd /src && npm run build 

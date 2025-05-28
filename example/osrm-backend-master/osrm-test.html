@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OSRM Test - Monaco</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+      }
+      #map {
+        height: 500px;
+        width: 100%;
+        border: 2px solid #333;
+      }
+      .info {
+        margin: 10px 0;
+        padding: 10px;
+        background: #f0f0f0;
+        border-radius: 5px;
+      }
+      .controls {
+        margin: 10px 0;
+      }
+      button {
+        padding: 10px 15px;
+        margin: 5px;
+        background: #007cba;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #005a87;
+      }
+      #result {
+        margin-top: 10px;
+        padding: 10px;
+        background: #e8f5e8;
+        border-radius: 5px;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🗺️ OSRM Test - Monaco Routing</h1>
+
+    <div class="info">
+      <strong>✅ Fixed Map Tiles:</strong> Using OpenStreetMap (no
+      authentication required)<br />
+      <strong>🚗 OSRM Server:</strong> http://localhost:5003<br />
+      <strong>📍 Location:</strong> Monaco, France
+    </div>
+
+    <div class="controls">
+      <button onclick="clearMap()">Clear Map</button>
+      <button onclick="addRandomPoints()">Add Random Points</button>
+      <button onclick="testRoute()">Test Route</button>
+      <button onclick="testNearest()">Test Nearest</button>
+      <button onclick="testTable()">Test Table</button>
+    </div>
+
+    <div id="map"></div>
+
+    <div id="result"></div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+      // Initialize map centered on Monaco
+      var map = L.map("map").setView([43.7384, 7.4246], 13);
+
+      // Add OpenStreetMap tiles (no token required!)
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      var markers = [];
+      var routeLayer = null;
+
+      // OSRM server URL
+      const OSRM_URL = "http://localhost:5003";
+
+      function showResult(title, data) {
+        document.getElementById("result").innerHTML =
+          "<h3>" +
+          title +
+          "</h3><pre>" +
+          JSON.stringify(data, null, 2) +
+          "</pre>";
+      }
+
+      function clearMap() {
+        markers.forEach((marker) => map.removeLayer(marker));
+        markers = [];
+        if (routeLayer) {
+          map.removeLayer(routeLayer);
+          routeLayer = null;
+        }
+        document.getElementById("result").innerHTML = "";
+      }
+
+      function addRandomPoints() {
+        clearMap();
+        // Add some points around Monaco
+        const points = [
+          [43.7384, 7.4246], // Monaco center
+          [43.7308, 7.4169], // Monaco-Ville
+          [43.7396, 7.4254], // Monte Carlo
+          [43.7341, 7.4197], // La Condamine
+        ];
+
+        points.forEach((point, i) => {
+          const marker = L.marker(point).addTo(map);
+          marker.bindPopup("Point " + (i + 1));
+          markers.push(marker);
+        });
+      }
+
+      async function testRoute() {
+        if (markers.length < 2) {
+          addRandomPoints();
+        }
+
+        const coords = markers
+          .slice(0, 2)
+          .map((m) => m.getLatLng().lng + "," + m.getLatLng().lat)
+          .join(";");
+
+        try {
+          const response = await fetch(
+            `${OSRM_URL}/route/v1/driving/${coords}?overview=full&steps=true`
+          );
+          const data = await response.json();
+
+          if (data.code === "Ok") {
+            // Draw route on map
+            const route = data.routes[0];
+            const coords = L.Polyline.fromEncoded(route.geometry).getLatLngs();
+
+            if (routeLayer) map.removeLayer(routeLayer);
+            routeLayer = L.polyline(coords, { color: "red", weight: 4 }).addTo(
+              map
+            );
+
+            showResult("Route Result", {
+              distance: route.distance + " meters",
+              duration: route.duration + " seconds",
+              steps: route.legs[0].steps.length + " steps",
+            });
+          } else {
+            showResult("Route Error", data);
+          }
+        } catch (error) {
+          showResult("Route Error", error.message);
+        }
+      }
+
+      async function testNearest() {
+        const center = map.getCenter();
+        const coords = center.lng + "," + center.lat;
+
+        try {
+          const response = await fetch(
+            `${OSRM_URL}/nearest/v1/driving/${coords}?number=3`
+          );
+          const data = await response.json();
+          showResult("Nearest Result", data);
+        } catch (error) {
+          showResult("Nearest Error", error.message);
+        }
+      }
+
+      async function testTable() {
+        if (markers.length < 2) {
+          addRandomPoints();
+        }
+
+        const coords = markers
+          .slice(0, 3)
+          .map((m) => m.getLatLng().lng + "," + m.getLatLng().lat)
+          .join(";");
+
+        try {
+          const response = await fetch(
+            `${OSRM_URL}/table/v1/driving/${coords}`
+          );
+          const data = await response.json();
+          showResult("Table Result", data);
+        } catch (error) {
+          showResult("Table Error", error.message);
+        }
+      }
+
+      // Add click handler to add markers
+      map.on("click", function (e) {
+        const marker = L.marker(e.latlng).addTo(map);
+        marker.bindPopup("Point " + (markers.length + 1));
+        markers.push(marker);
+      });
+
+      // Add initial points
+      addRandomPoints();
+
+      // Show initial info
+      showResult("OSRM Test Ready", {
+        message:
+          "Click on the map to add waypoints, or use the buttons above to test OSRM services",
+        mapTiles: "OpenStreetMap (no authentication required)",
+        osrmServer: OSRM_URL,
+      });
+    </script>
+  </body>
+</html>

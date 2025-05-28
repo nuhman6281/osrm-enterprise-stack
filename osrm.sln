@@ -1,0 +1,41 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example", "example", "{1D587995-D2B1-D47C-23B4-E8E972FA15E9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "osrm-backend-master", "osrm-backend-master", "{BC9C2962-50D9-C9D5-A13A-DD952121A8AB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "third_party", "third_party", "{7464F49C-24D4-26F2-71F0-33DE55D2992B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "flatbuffers", "flatbuffers", "{D4483773-E3AF-EF56-5413-0CBA3C54F327}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "net", "net", "{5458BCE9-C2A6-52BB-745C-CFE416F457CF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.FlatBuffers", "example\osrm-backend-master\third_party\flatbuffers\net\FlatBuffers\Google.FlatBuffers.csproj", "{FFA67A06-2931-E768-B12A-69D782DF366E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FFA67A06-2931-E768-B12A-69D782DF366E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFA67A06-2931-E768-B12A-69D782DF366E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFA67A06-2931-E768-B12A-69D782DF366E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFA67A06-2931-E768-B12A-69D782DF366E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BC9C2962-50D9-C9D5-A13A-DD952121A8AB} = {1D587995-D2B1-D47C-23B4-E8E972FA15E9}
+		{7464F49C-24D4-26F2-71F0-33DE55D2992B} = {BC9C2962-50D9-C9D5-A13A-DD952121A8AB}
+		{D4483773-E3AF-EF56-5413-0CBA3C54F327} = {7464F49C-24D4-26F2-71F0-33DE55D2992B}
+		{5458BCE9-C2A6-52BB-745C-CFE416F457CF} = {D4483773-E3AF-EF56-5413-0CBA3C54F327}
+		{FFA67A06-2931-E768-B12A-69D782DF366E} = {5458BCE9-C2A6-52BB-745C-CFE416F457CF}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D537CB57-4AAD-4A84-8E53-F9CF67763E0F}
+	EndGlobalSection
+EndGlobal

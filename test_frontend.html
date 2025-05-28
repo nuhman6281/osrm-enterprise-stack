@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OSRM Frontend Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+      }
+      .error {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+      }
+      button {
+        padding: 10px 15px;
+        margin: 5px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      pre {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 3px;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>OSRM Frontend Test</h1>
+    <p>Testing the OSRM Enterprise API with Berlin coordinates</p>
+
+    <div class="test-section">
+      <h3>Test 1: Route Calculation (Brandenburg Gate → Alexanderplatz)</h3>
+      <button onclick="testRoute()">Test Route</button>
+      <div id="route-result"></div>
+    </div>
+
+    <div class="test-section">
+      <h3>Test 2: Isochrone Generation (Brandenburg Gate)</h3>
+      <button onclick="testIsochrone()">Test Isochrone</button>
+      <div id="isochrone-result"></div>
+    </div>
+
+    <div class="test-section">
+      <h3>Test 3: Geocoding Search</h3>
+      <button onclick="testGeocode()">Test Geocoding</button>
+      <div id="geocode-result"></div>
+    </div>
+
+    <div class="test-section">
+      <h3>Frontend Access</h3>
+      <p>
+        Main application:
+        <a href="http://localhost:9966" target="_blank"
+          >http://localhost:9966</a
+        >
+      </p>
+      <p>
+        API Documentation:
+        <a href="http://localhost:3003/api-docs" target="_blank"
+          >http://localhost:3003/api-docs</a
+        >
+      </p>
+    </div>
+
+    <script>
+      async function testRoute() {
+        const resultDiv = document.getElementById("route-result");
+        resultDiv.innerHTML = "<p>Testing route calculation...</p>";
+
+        try {
+          const response = await fetch(
+            "http://localhost:3003/api/v2/route/advanced",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                coordinates: [
+                  [13.3777, 52.5163],
+                  [13.4132, 52.5219],
+                ], // Brandenburg Gate → Alexanderplatz
+                profile: "car",
+                alternatives: false,
+                steps: true,
+                geometries: "geojson",
+                overview: "full",
+              }),
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            resultDiv.className = "test-section success";
+            resultDiv.innerHTML = `
+                        <h4>✅ Route calculation successful!</h4>
+                        <p><strong>Distance:</strong> ${(
+                          data.routes[0].distance / 1000
+                        ).toFixed(2)} km</p>
+                        <p><strong>Duration:</strong> ${Math.round(
+                          data.routes[0].duration / 60
+                        )} minutes</p>
+                        <p><strong>Profile:</strong> ${
+                          data.enhanced?.profile || "car"
+                        }</p>
+                        <details>
+                            <summary>Full Response</summary>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    `;
+          } else {
+            const errorData = await response.json();
+            throw new Error(
+              `${response.status}: ${errorData.error || response.statusText}`
+            );
+          }
+        } catch (error) {
+          resultDiv.className = "test-section error";
+          resultDiv.innerHTML = `<h4>❌ Route calculation failed</h4><p>${error.message}</p>`;
+        }
+      }
+
+      async function testIsochrone() {
+        const resultDiv = document.getElementById("isochrone-result");
+        resultDiv.innerHTML = "<p>Testing isochrone generation...</p>";
+
+        try {
+          const response = await fetch(
+            "http://localhost:3003/api/v2/isochrone",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                coordinates: [13.3777, 52.5163], // Brandenburg Gate
+                contours: [300, 600, 900], // 5, 10, 15 minutes
+                profile: "car",
+              }),
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            resultDiv.className = "test-section success";
+            resultDiv.innerHTML = `
+                        <h4>✅ Isochrone generation successful!</h4>
+                        <p><strong>Features generated:</strong> ${
+                          data.features.length
+                        }</p>
+                        <p><strong>Time limits:</strong> ${data.metadata.contours.join(
+                          ", "
+                        )} seconds</p>
+                        <p><strong>Algorithm:</strong> ${
+                          data.metadata.algorithm
+                        }</p>
+                        <details>
+                            <summary>Full Response</summary>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    `;
+          } else {
+            const errorData = await response.json();
+            throw new Error(
+              `${response.status}: ${errorData.error || response.statusText}`
+            );
+          }
+        } catch (error) {
+          resultDiv.className = "test-section error";
+          resultDiv.innerHTML = `<h4>❌ Isochrone generation failed</h4><p>${error.message}</p>`;
+        }
+      }
+
+      async function testGeocode() {
+        const resultDiv = document.getElementById("geocode-result");
+        resultDiv.innerHTML = "<p>Testing geocoding search...</p>";
+
+        try {
+          const response = await fetch(
+            "http://localhost:3003/api/v1/search?q=Brandenburg Gate&limit=3&countrycodes=de"
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            resultDiv.className = "test-section success";
+            resultDiv.innerHTML = `
+                        <h4>✅ Geocoding search successful!</h4>
+                        <p><strong>Query:</strong> ${data.query}</p>
+                        <p><strong>Results found:</strong> ${data.count}</p>
+                        <div>
+                            ${data.results
+                              .map(
+                                (result) => `
+                                <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 3px;">
+                                    <strong>${result.display_name}</strong><br>
+                                    <small>Lat: ${result.lat}, Lng: ${result.lng}</small>
+                                </div>
+                            `
+                              )
+                              .join("")}
+                        </div>
+                        <details>
+                            <summary>Full Response</summary>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    `;
+          } else {
+            const errorData = await response.json();
+            throw new Error(
+              `${response.status}: ${errorData.error || response.statusText}`
+            );
+          }
+        } catch (error) {
+          resultDiv.className = "test-section error";
+          resultDiv.innerHTML = `<h4>❌ Geocoding search failed</h4><p>${error.message}</p>`;
+        }
+      }
+
+      // Auto-run tests on page load
+      window.addEventListener("load", () => {
+        console.log("OSRM Frontend Test Page Loaded");
+        console.log("Click the test buttons to verify functionality");
+      });
+    </script>
+  </body>
+</html>

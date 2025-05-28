@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Debug Map Test</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="http://localhost:9970/css/leaflet.css" />
+    <style>
+      #map {
+        height: 500px;
+        width: 100%;
+      }
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+      }
+      .debug {
+        background: #f0f0f0;
+        padding: 10px;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>OSRM Map Debug Test</h1>
+    <div class="debug">
+      <h3>Debug Info:</h3>
+      <div id="debug-info">Loading...</div>
+    </div>
+    <div id="map"></div>
+
+    <script src="http://localhost:9970/bundle.js"></script>
+    <script>
+      console.log("Debug script starting...");
+
+      // Add debug info
+      function addDebugInfo(message) {
+        const debugDiv = document.getElementById("debug-info");
+        debugDiv.innerHTML +=
+          "<br>" + new Date().toLocaleTimeString() + ": " + message;
+        console.log("DEBUG:", message);
+      }
+
+      addDebugInfo("Script loaded");
+
+      // Check if Leaflet is available
+      if (typeof L !== "undefined") {
+        addDebugInfo("Leaflet is available: " + L.version);
+      } else {
+        addDebugInfo("ERROR: Leaflet is not available");
+      }
+
+      // Try to create a simple map
+      try {
+        addDebugInfo("Creating map...");
+        const map = L.map("map").setView([43.7384, 7.4246], 13);
+
+        addDebugInfo("Map created, adding tiles...");
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap contributors",
+        }).addTo(map);
+
+        addDebugInfo("Tiles added successfully");
+
+        // Test OSRM server
+        fetch(
+          "http://localhost:5003/route/v1/driving/7.416,43.731;7.421,43.736"
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            addDebugInfo("OSRM server response: " + data.code);
+          })
+          .catch((error) => {
+            addDebugInfo("OSRM server error: " + error.message);
+          });
+      } catch (error) {
+        addDebugInfo("ERROR creating map: " + error.message);
+      }
+    </script>
+  </body>
+</html>

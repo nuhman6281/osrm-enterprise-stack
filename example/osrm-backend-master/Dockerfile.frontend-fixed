@@ -1,0 +1,23 @@
+FROM osrm/osrm-frontend as builder
+
+# Copy our custom leaflet options
+COPY custom_leaflet_options.js /src/src/leaflet_options.js
+
+# Create a debug-enabled index.html
+COPY debug-index.html /src/index.html
+
+# Build the frontend
+RUN cd /src && npm run build
+
+# Use nginx to serve the built files
+FROM nginx:alpine
+
+# Copy built files from builder stage
+COPY --from=builder /src /usr/share/nginx/html
+
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"] 

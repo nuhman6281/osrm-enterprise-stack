@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Map Test - Independent</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      #map {
+        height: 500px;
+        width: 100%;
+      }
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+      }
+      .status {
+        background: #f0f0f0;
+        padding: 10px;
+        margin: 10px 0;
+      }
+      .error {
+        background: #ffebee;
+        color: #c62828;
+      }
+      .success {
+        background: #e8f5e8;
+        color: #2e7d32;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Simple Map Test (Independent)</h1>
+    <div id="status" class="status">Loading...</div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const statusDiv = document.getElementById("status");
+
+      function updateStatus(message, type = "info") {
+        statusDiv.innerHTML = message;
+        statusDiv.className = "status " + type;
+        console.log("STATUS:", message);
+      }
+
+      updateStatus("Leaflet loaded, creating map...");
+
+      try {
+        // Create map centered on Monaco
+        const map = L.map("map").setView([43.7384, 7.4246], 13);
+
+        updateStatus("Map created, adding OpenStreetMap tiles...");
+
+        // Add OpenStreetMap tiles
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap contributors",
+          maxZoom: 19,
+        }).addTo(map);
+
+        updateStatus("Map tiles added, testing OSRM server...", "success");
+
+        // Add a marker
+        L.marker([43.7384, 7.4246])
+          .addTo(map)
+          .bindPopup("Monaco - OSRM Test Location")
+          .openPopup();
+
+        // Test OSRM server
+        fetch(
+          "http://localhost:5003/route/v1/driving/7.416,43.731;7.421,43.736"
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.code === "Ok") {
+              updateStatus(
+                "✓ Map loaded successfully! OSRM server: " + data.code,
+                "success"
+              );
+
+              // Draw the route on the map
+              const coords = data.routes[0].geometry.coordinates.map(
+                (coord) => [coord[1], coord[0]]
+              );
+              L.polyline(coords, { color: "red", weight: 5 }).addTo(map);
+
+              // Add start and end markers
+              L.marker([43.731, 7.416]).addTo(map).bindPopup("Start");
+              L.marker([43.736, 7.421]).addTo(map).bindPopup("End");
+            } else {
+              updateStatus(
+                "⚠ Map loaded but OSRM error: " + data.code,
+                "error"
+              );
+            }
+          })
+          .catch((error) => {
+            updateStatus(
+              "⚠ Map loaded but OSRM server error: " + error.message,
+              "error"
+            );
+          });
+      } catch (error) {
+        updateStatus("✗ ERROR creating map: " + error.message, "error");
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,231 @@
+/* Autocomplete Styles */
+.autocomplete-container {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
+  display: none;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.autocomplete-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.highlighted {
+  background-color: #f8f9ff;
+  border-left: 3px solid #667eea;
+  padding-left: 13px;
+}
+
+.autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.autocomplete-main {
+  font-weight: 500;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.autocomplete-main i {
+  color: #667eea;
+  font-size: 12px;
+  width: 12px;
+}
+
+.autocomplete-details {
+  font-size: 12px;
+  color: #666;
+  text-transform: capitalize;
+  margin-left: 20px;
+}
+
+.autocomplete-loading {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #666;
+  font-size: 14px;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.autocomplete-no-results,
+.autocomplete-error {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.autocomplete-error {
+  color: #dc3545;
+}
+
+.autocomplete-error i {
+  color: #dc3545;
+}
+
+.autocomplete-no-results i {
+  color: #999;
+}
+
+.input-group {
+  position: relative;
+}
+
+/* Ensure input containers have relative positioning for autocomplete */
+.controls .input-group {
+  position: relative;
+}
+
+/* Improve input styling */
+.controls input[type="text"] {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.controls input[type="text"]:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.controls input[type="text"]::placeholder {
+  color: #999;
+}
+
+/* Loading overlay for route calculation */
+.route-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.route-loading-content {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.route-loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Improved error and success messages */
+.message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  z-index: 10001;
+  max-width: 400px;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.error-message {
+  background: #fee;
+  color: #c53030;
+  border: 1px solid #feb2b2;
+}
+
+.success-message {
+  background: #f0fff4;
+  color: #38a169;
+  border: 1px solid #9ae6b4;
+} 
