@@ -1,0 +1,58 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter for system metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # OSRM Enhanced API
+  - job_name: 'osrm-api'
+    static_configs:
+      - targets: ['osrm-api:3001']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # Nginx metrics (if nginx-prometheus-exporter is added)
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx-proxy:9113']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Redis metrics (if redis-exporter is added)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Custom OSRM health checks
+  - job_name: 'osrm-health'
+    static_configs:
+      - targets: ['osrm-backend-1:5000', 'osrm-backend-2:5000']
+    scrape_interval: 60s
+    metrics_path: /route/v1/driving/13.388860,52.517037;13.397634,52.529407
+    params:
+      overview: ['false']
+    scrape_timeout: 30s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  - "alert_rules.yml" 
