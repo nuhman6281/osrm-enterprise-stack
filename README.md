@@ -1,4 +1,4 @@
-# OSRM Complete Self-Hosting Package
+# OSRM Enterprise Stack
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue.svg)](https://docs.docker.com/compose/)
@@ -45,8 +45,8 @@ A comprehensive, production-ready OSRM (Open Source Routing Machine) self-hostin
 
 ```bash
 # Clone the repository
-git clone https://github.com/nuhman6281/osrm-complete-package.git
-cd osrm-complete-package
+git clone https://github.com/nuhman6281/osrm-enterprise-stack.git
+cd osrm-enterprise-stack
 
 # Make setup script executable
 chmod +x setup.sh quick-start.sh
@@ -177,7 +177,7 @@ curl 'http://localhost:3001/nearest?lat=52.517037&lng=13.388860&number=3'
 ## 🏗️ Project Structure
 
 ```
-osrm-complete-package/
+osrm-enterprise-stack/
 ├── 📁 api/                     # Enhanced API service
 │   ├── server.js              # Main API server with documentation
 │   ├── swagger.js             # API documentation configuration
@@ -551,8 +551,8 @@ deploy:
 
 ```bash
 # Clone for development
-git clone https://github.com/nuhman6281/osrm-complete-package.git
-cd osrm-complete-package
+git clone https://github.com/nuhman6281/osrm-enterprise-stack.git
+cd osrm-enterprise-stack
 
 # Install development dependencies
 cd api && npm install

@@ -1,4 +1,4 @@
-# OSRM Complete Self-Hosting Package - Project Summary
+# OSRM Enterprise Stack - Project Summary
 
 ## 📋 Project Overview
 
@@ -541,7 +541,7 @@ This is a comprehensive, production-ready OSRM (Open Source Routing Machine) sel
 
 ### Community Resources
 
-- **GitHub Repository**: https://github.com/nuhman6281/osrm-complete-package
+- **GitHub Repository**: https://github.com/nuhman6281/osrm-enterprise-stack
 - **OSRM Project**: https://project-osrm.org/
 - **OpenStreetMap**: https://www.openstreetmap.org/
 - **Docker Hub**: Container images and documentation
